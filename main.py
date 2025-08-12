@@ -4,6 +4,7 @@ from discord.ext import commands
 from discord import app_commands
 import os # For env
 from dotenv import load_dotenv
+import datetime
 # from numpy import *
 # import numexpr
 
@@ -21,11 +22,18 @@ class client(commands.Bot): #using commands.Bot for slash commands
         except Exception as e:
             print(f"Error syncing commands: {e}")
 
-   # React with specific text     
+# Message Events            
+
+   # React to a message     
     async def on_message(self,message):
         # print(f"Message from: {message.author}:{message.content}") 
         if message.content == "Syst":
             await message.channel.send("He is noob!!")
+
+    # Send message on message edit
+    async def on_message_edit(self,before,after):
+        if before.content!=after.content:
+            await after.channel.send(f"{before.author} Edited there message:\n **Original:** {before.content}\n **Edited** {after.content}\n")               
 
     # Message on deleting
     async def on_message_delete(self,message):
@@ -33,6 +41,8 @@ class client(commands.Bot): #using commands.Bot for slash commands
             return
         else:
             await message.channel.send(f'I saw that {message.author}!!')
+
+# Reaction events
 
     # Message on reaction       
     async def on_reaction_add(self,reaction,user):
@@ -43,10 +53,7 @@ class client(commands.Bot): #using commands.Bot for slash commands
     async def on_reaction_remove(self,reaction,user):
         await reaction.message.channel.send("Why did you removed the reaction 🥀")
 
-    # Send message on message edit
-    async def on_message_edit(self,before,after):
-        if before.content!=after.content:
-            await after.channel.send(f"{before.author} Edited there message:\n **Original:** {before.content}\n **Edited** {after.content}\n")   
+# User join and leave events
 
     # Welcome user when joined the server
     async def on_member_join(self,member):
@@ -54,68 +61,47 @@ class client(commands.Bot): #using commands.Bot for slash commands
         if channel:
             await channel.send(f'Welcome to the server king {member.mention}')
 
-    # Send message on user remove
+    # Send message on user leaves
     async def on_member_remove(self,member):
         channel=self.get_channel(1398594677065650206)
         if channel:
             await channel.send(f'{member.name} Left us 🥀')
-    
-    # # bad language
-    # async def on_message(self,message):
-    #         badwords=["fuck","dick","mf","shit"]
-    #         mesg_content=message.content.lower()
-    #         if any(word in mesg_content for word in badwords):
-    #             await message.delete()
-    #             await message.channel.send(f"Hey {message.author} please don't use such language")
-    
 
-intents=discord.Intents.all() 
-intents.message_content= True
-intents.members=True
-client=client(command_prefix="!",intents=intents)
+    # async def on_member_banned(self,member):
+    #     channel=self.get_channel(1398574226297982987)
+    #     if channel:
+    #         await channel.send(f"Bohaha {member.name} got banned")
+
+# Small automod            
+    
+    # bad language
+    async def on_message(self,message):
+            badwords=["fuck","dick","mf","shit"]
+            mesg_content=message.content.lower()
+            if any(word in mesg_content for word in badwords):
+                await message.delete()
+                await message.channel.send(f"Hey {message.author} please don't use such language")
+    
 
 GUILD_ID = discord.Object(id=1391791251031851110) # for insuring that the bot run in the specific server only
 
-# Command that says hi to the user who ran it
-@client.tree.command(name="hello",description="Say hi", guild=discord.Object(id=1391791251031851110))
-async def say_hi(interaction:discord.Interaction):
-    await interaction.response.send_message(f"Hi {interaction.user.mention}")
+intents=discord.Intents.all() 
+intents.message_content= True
+intents.members=True                
+client=client(command_prefix="!",intents=intents)   
 
-# Command that prints user input
-@client.tree.command(name="say",description="Print the user input",guild=discord.Object(id=1391791251031851110))
-async def say_com(interaction:discord.Interaction,expression:str):
-    await interaction.response.send_message(expression)
 
-# ccommand practice
-@client.tree.command(name="pingyourself", description="fun command",guild=discord.Object(id=1391791251031851110))
-async def mention(interaction:discord.Interaction):
-    await interaction.response.send_message(f"Son of mitch {interaction.user.mention}")
-
-# kick command
-@client.tree.command(name="kick",description="kick User",guild=discord.Object(id=1391791251031851110))
-@app_commands.describe(user="The user to kick", reason="The reason for kicking")
-async def kick(interaction:discord.Interaction,user:discord.Member,reason:str):
-    # Permission check
-    if not interaction.user.guild_permissions.kick_members:
-        await interaction.response.send_message("❌ You don't have permission to kick members.", ephemeral=True)
+# Basic embed desgin
+@client.tree.command(name="embed2",description="basic embed with title,description,field and footer",guild=discord.Object(id=1391791251031851110))
+async def embed(interaction:discord.Interaction,title:str,description:str,channel:discord.TextChannel):
+    embed=discord.Embed(title=title,description=description,color=discord.Color.red())
+    # embed.set_footer(text="This is a footer")
+    if not interaction.user.guild_permissions.manage_messages:
+        await interaction.response.send_message(f"{interaction.user} Sorry you can use this command",ephemeral=True)
         return
     else:
-            dm=client.get_user(user)
-            await user.send(f"You have been kicked from the server")
-            await user.kick(reason=reason)
-            await interaction.response.send_message(f"{user} is been kicked due to the Reason:{reason}")
-
-#Embed
-# @client.tree.command(name="embed",description="create embeds",guild=discord.Object(id=1391791251031851110))
-# async def embeds(interaction:discord.Interaction,title:str,description:str,url:str,image:str,thumbnail:str,footer:str,channel:str):
-#     embed=discord.Embed(title=title,url=url,description=description, color=discord.Color.red())
-#     embed.set_thumbnail(url=thumbnail)
-#     embed.set_image(url=image)
-#     # embed.add_field(name="Field 1",value="This is field 1",inline=False)
-#     # embed.add_field(name="Field 2",value="This is field 2",inline=False)
-#     embed.set_footer(text=footer)
-#     embed.set_author(name=interaction.user.name,url="https://youtu.be/KHQ2MaDbx5I?si=aYUhuc5Hw-VDq6KW",icon_url="https://media.discordapp.net/attachments/1401105787127992350/1401106535915982949/Screenshot_2023-12-24_125547.png?")
-#     await interaction.response.send_message(embed=embed)
+        await channel.send(embed=embed) # Send directly to selected channel
+        await interaction.response.send_message(f"Embed sent to {channel.mention}",ephemeral=True)
 
 # Button response and style
 class View(discord.ui.View): 
@@ -133,30 +119,69 @@ class View(discord.ui.View):
 async def buttons(interaction:discord.Interaction):
     await interaction.response.send_message(view=View())
 
-# Embed sent to specific channel
-@client.tree.command(name="embed2",description="create embeds",guild=discord.Object(id=1391791251031851110))
-async def embed2(interaction:discord.Interaction,title:str,description:str,channel:discord.TextChannel):
-    embed=discord.Embed(title=title,description=description,color=discord.Color.red())
-    embed.set_footer(text="This is a footer")
-    await channel.send(embed=embed)  # Send directly to selected channel
-    await interaction.response.send_message(f"Embed sent to {channel.mention} ✅", ephemeral=True)
-
 # Kick user with an embed
-@client.tree.command(name="kicked",description="kick User",guild=discord.Object(id=1391791251031851110))
+@client.tree.command(name="kick",description="kick User",guild=discord.Object(id=1391791251031851110))
 @app_commands.describe(user="The user to kick", reason="The reason for kicking")
 async def kickembed(interaction:discord.Interaction,user:discord.Member,reason:str):
-    embed2=discord.Embed(title="Kick User",description=f"{user} is been kicked from the server due to the reason: {reason}",color=discord.Color.red())
-    embed2.set_image(url="https://tenor.com/view/spongebob-squarepants-get-out-kick-out-booted-bye-felicia-gif-13565963.gif")
+    embed2=discord.Embed(title="Kicked User",description="kicked the user from the server",color=discord.Color.red())
+    embed2.add_field(name=f"User:{user.name}",value=f"Reason:{reason}",inline=False)
+    embed2.set_image(url="https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExMXNwdGZlcDNpcDNwNng1b2QxN3A2bjh4eG8wNmRhM241Mzl1c3N5cSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/UfkfLErH5QMlzXChcF/giphy.gif")
     # Permission check
     if not interaction.user.guild_permissions.kick_members:
         await interaction.response.send_message("❌ You don't have permission to kick members.", ephemeral=True)
         return
     else:
+            channel=interaction.guild.get_channel(1398574226297982987)
             dm=client.get_user(user)
             await user.send(f"You have been kicked from the server due to the reason: {reason}")
             await user.kick(reason=reason)
-            await interaction.response.send_message(embed=embed2)
+    if channel:
+            await channel.send(embed=embed2)
+            await interaction.response.send_message(f"User Sucessfully kicked",ephemeral=True)
 
+# Ban User
+@client.tree.command(name="ban",description="Ban user",guild=discord.Object(id=1391791251031851110))
+async def ban(interaction:discord.Interaction,user:discord.Member,reason:str):
+    # check permission
+    if not interaction.user.guild_permissions.administrator:
+        await interaction.response.send_message("You don't have require permission to use this command",ephemeral=True)
+        return
+    else:
+        dm=client.get_user(user)
+        await user.send(f"You have been banned from the server due to: {reason}")
+        await user.ban(reason=reason)
+        await interaction.response.send_message(f"{user} is been banned from the server",ephemeral=True)
 
-
+# Unban user
+@client.tree.command(name="unban",description="Unban user",guild=discord.Object(id=1391791251031851110))
+async def ban(interaction:discord.Interaction,user_id:discord.User,reason:str):
+    await client.fetch_user(user_id)
+    # check permission
+    if not interaction.user.guild_permissions.administrator:
+        await interaction.response.send_message("You don't have require permission to use this command",ephemeral=True)
+        return
+    else:
+        await interaction.guild.unban(user_id,reason=reason)
+        await interaction.response.send_message("Unbanned from the server",ephemeral=True)
+  
+# Timeout user in minutes
+@client.tree.command(name="timeout",description="Timeout user",guild=discord.Object(id=1391791251031851110))
+async def timeout(interaction:discord.Interaction,user:discord.Member,duration:int,reason:str):
+    if not interaction.user.guild_permissions.mute_members:
+        await interaction.response.send_message("You don't have required permission to use this command",ephemeral=True)
+        return 
+    else:
+        until_time = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=duration)
+        await user.timeout(until_time,reason=reason)
+        await interaction.response.send_message(f"{user.mention} Has been muted till {duration} minute")
+ 
+ # Remove user timeout
+@client.tree.command(name="unmute",description="Remove user timeout",guild=discord.Object(id=1391791251031851110))
+async def unmute(interaction:discord.Interaction,user:discord.Member,reason:str):
+    if not interaction.user.guild_permissions.mute_members:
+        await interaction.response.send_message(f"{interaction.user.mention} You don't have required permission to use this command",ephemeral=True)
+        return
+    else:
+        await user.timeout(None,reason=reason)
+        await interaction.response.send_message(f"{user.mention} Has been unmuted")
 client.run(TOKEN)
