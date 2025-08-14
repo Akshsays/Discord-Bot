@@ -25,7 +25,7 @@ class client(commands.Bot): #using commands.Bot for slash commands
 # Message Events            
 
    # React to a message     
-    async def on_message(self,message):
+    async def on_message(self,message,member:discord.Member):
         # print(f"Message from: {message.author}:{message.content}") 
         if message.content == "Syst":
             await message.channel.send("He is noob!!")
@@ -55,11 +55,13 @@ class client(commands.Bot): #using commands.Bot for slash commands
 
 # User join and leave events
 
-    # Welcome user when joined the server
+    # Welcome user when joined the server with and embed
     async def on_member_join(self,member):
         channel = self.get_channel(1398593475250749450)
+        embed=discord.Embed(title=f"📸 Lights, camera, action!",description=f"Welcome to **Basement** \n\n Get ready to supercharge your Discord server with our feature-rich bot. Join lively discussions, get help with ABOT, and connect with a friendly bunch of enthusiasts. Were excited to have you here.")
         if channel:
-            await channel.send(f'Welcome to the server king {member.mention}')
+            await channel.send(f'{member.mention} landed here')
+            await channel.send(embed=embed)
 
     # Send message on user leaves
     async def on_member_remove(self,member):
@@ -92,7 +94,7 @@ client=client(command_prefix="!",intents=intents)
 
 
 # Basic embed desgin
-@client.tree.command(name="embed2",description="basic embed with title,description,field and footer",guild=discord.Object(id=1391791251031851110))
+@client.tree.command(name="embed",description="basic embed with title,description,field and footer",guild=discord.Object(id=1391791251031851110))
 async def embed(interaction:discord.Interaction,title:str,description:str,channel:discord.TextChannel):
     embed=discord.Embed(title=title,description=description,color=discord.Color.red())
     # embed.set_footer(text="This is a footer")
@@ -118,6 +120,8 @@ class View(discord.ui.View):
 @client.tree.command(name="button",description="add a button",guild=discord.Object(id=1391791251031851110))
 async def buttons(interaction:discord.Interaction):
     await interaction.response.send_message(view=View())
+
+# Mod Commands
 
 # Kick user with an embed
 @client.tree.command(name="kick",description="kick User",guild=discord.Object(id=1391791251031851110))
@@ -184,4 +188,33 @@ async def unmute(interaction:discord.Interaction,user:discord.Member,reason:str)
     else:
         await user.timeout(None,reason=reason)
         await interaction.response.send_message(f"{user.mention} Has been unmuted")
+        
+# Report command
+@client.tree.command(name="report",description="Report the user",guild=discord.Object(id=1391791251031851110))
+@app_commands.describe(message="enter the message to be reported",user="Enter user to report",reason="Enter the reason of report",comment="Add extra info")
+async def report(interaction:discord.Interaction,user:discord.Member,message:str,reason:str,comment:str):
+    rpembed=discord.Embed(title="Report",description=f"{interaction.user.mention} reported {user} for {reason}",color=discord.Color.red())
+    rpembed.add_field(name="Message / Evidence", value=message, inline=False)
+    rpembed.add_field(name="Comment", value=comment, inline=False)
+
+    channelid=1404893284890837013
+    targetchannel=client.get_channel(channelid)
+    if targetchannel:
+        await targetchannel.send(embed=rpembed)
+    await interaction.response.send_message(f"{interaction.user} Thanks for reporting the user!!",ephemeral=True)
+
+# bits to bytes converter cmd
+@client.tree.command(name="find",description="Calculate bits and bytes",guild=discord.Object(id=1391791251031851110))
+async def byt(interaction:discord.Interaction,bits:float,bytes:float):
+    b1=bits/8
+    b2=bytes*8
+    await interaction.response.send_message(f"The given number of bits {bits} are equal to {b1} number of bytes",ephemeral=True)
+    await interaction.followup.send(f"The given number of byes {bytes} are equal to {b2} number of bits",ephemeral=True)
+
+# Bot ping
+@client.tree.command(name="ping",description="Tells the ping of the bot",guild=discord.Object(id=1391791251031851110))
+async def pong(interaction:discord.Interaction):
+    latency=round(client.latency*8)
+    await interaction.response.send_message(f"Bot ping: {latency}",ephemeral=True)
+
 client.run(TOKEN)
